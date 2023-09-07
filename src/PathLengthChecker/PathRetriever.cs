@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using SearchOption = System.IO.SearchOption;
+using System;
 
 namespace PathLengthChecker
 {
@@ -29,7 +30,7 @@ namespace PathLengthChecker
 				searchOptions.SearchPattern = "*";
 
 			// Get the paths according to the search parameters
-			var paths = GetPathsUsingAlphaFs(searchOptions);
+			var paths = GetPathsUsingSystemIO(searchOptions);
 
 			// Return each of the paths, replacing the Root Directory if specified to do so.
 			foreach (var path in paths)
@@ -50,16 +51,26 @@ namespace PathLengthChecker
 			}
 		}
 
-		private static IEnumerable<string> GetPathsUsingAlphaFs(PathSearchOptions searchOptions)
+		private static IEnumerable<string> GetPathsUsingSystemIO(PathSearchOptions searchOptions)
 		{
-			DirectoryEnumerationOptions options = (DirectoryEnumerationOptions)searchOptions.TypesToGet |
-				DirectoryEnumerationOptions.ContinueOnException | DirectoryEnumerationOptions.SkipReparsePoints;
+			SearchOption searchOption = searchOptions.SearchOption;
 
-			if (searchOptions.SearchOption == SearchOption.AllDirectories)
-				options |= DirectoryEnumerationOptions.Recursive;
+			try
+			{
+				var paths = Directory.EnumerateFileSystemEntries(
+					searchOptions.RootDirectory,
+					searchOptions.SearchPattern,
+					searchOption
+				);
 
-			var paths = Directory.EnumerateFileSystemEntries(searchOptions.RootDirectory, searchOptions.SearchPattern, options);
-			return paths;
+				return paths;
+			}
+			catch (Exception ex)
+			{
+				// Handle exceptions, such as access denied, if needed
+				Console.WriteLine($"An error occurred: {ex.Message}");
+				return Enumerable.Empty<string>();
+			}
 		}
 
 		private static IEnumerable<string> GetPathsUsingSystemIo(PathSearchOptions searchOptions)
