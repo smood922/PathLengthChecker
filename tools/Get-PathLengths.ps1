@@ -1,3 +1,4 @@
+function Get-PathLengths {
 # Output the length of all files and folders in the given directory path.
 [CmdletBinding()]
 param
@@ -19,6 +20,12 @@ param
 
     [Parameter(HelpMessage = 'The file path to write the results to when $WriteResultsToFile is true.')]
     [string] $ResultsFilePath = 'C:\Temp\PathLengths.txt'
+	
+    [Parameter(HelpMessage = 'Set this to $true if you want to replace the root path.')]
+    [bool] $ReplacePath = $false,
+ 
+    [Parameter(HelpMessage = 'The replacement root path. Everything under $DirectoryPathToScan will be replaced in the output.')]
+    [string] $ReplaceFilePath = 'C:\Temp\PathLengths.txt'
 )
 
 # Display the time that this script started running.
@@ -43,6 +50,11 @@ Get-ChildItem -Path $DirectoryPathToScan -Recurse -Force |
     $filePath = $_.FullName
     $length = $_.FullNameLength
 
+ 	if ($ReplacePath) {
+		$filePath.replace($filePath,$ReplaceFilePath)
+  		$length = $filePath.Length
+  	}
+
     # If this path is long enough, add it to the results.
     if ($length -ge $MinimumPathLengthsToShow)
     {
@@ -64,3 +76,4 @@ if ($WriteResultsToFile) { $fileStream.Close() }
 Write-Verbose "Finished script at '$finishTime'. Took '$elapsedTime' to run." -Verbose
 
 if ($WriteResultsToGridView) { $filePathsAndLengths | Out-GridView -Title "Paths under '$DirectoryPathToScan' longer than '$MinimumPathLengthsToShow'." }
+}
